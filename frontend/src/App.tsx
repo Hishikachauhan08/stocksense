@@ -21,7 +21,7 @@ import { GuidedTourModal } from './components/common/GuidedTourModal';
 import { Product } from './types/inventory';
 
 function App() {
-  const { activeView, setActiveView } = useInventory();
+  const { activeView, setActiveView, isAuthenticated, authChecking, logout } = useInventory();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup' | 'reset'>('login');
@@ -43,7 +43,19 @@ function App() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
+  // After signing in, users land on the Inventory Dashboard
+  useEffect(() => {
+    if (isAuthenticated) {
+      setActiveTab('dashboard');
+      setAuthOpen(false);
+    }
+  }, [isAuthenticated]);
+
   const handleEnterApp = () => {
+    if (!isAuthenticated) {
+      openAuth('login');
+      return;
+    }
     setActiveView('app');
     setActiveTab('dashboard');
   };
@@ -57,7 +69,8 @@ function App() {
 
   const handleLogout = () => {
     setProfileOpen(false);
-    setActiveView('landing');
+    setStaffOpen(false);
+    logout();
   };
 
   const openAuth = (mode: 'login' | 'signup' | 'reset' = 'login') => {
@@ -120,7 +133,15 @@ function App() {
     }
   };
 
-  if (activeView === 'landing') {
+  if (authChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#fafaf9]">
+        <div className="w-8 h-8 rounded-full border-2 border-stone-200 border-t-stone-900 animate-spin" />
+      </div>
+    );
+  }
+
+  if (activeView === 'landing' || !isAuthenticated) {
     return (
       <>
         <LandingPage
@@ -152,8 +173,9 @@ function App() {
         onOpenTour={() => setTourOpen(true)}
         onOpenStaffManagement={() => setStaffOpen(true)}
         onGoToLanding={handleGoToLanding}
+        onLogout={handleLogout}
       />
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
+      <div className="flex-1 flex flex-col min-w-0">
         <Navbar
           onOpenSearch={() => setSearchOpen(true)}
           onOpenScanner={() => setScannerOpen(true)}

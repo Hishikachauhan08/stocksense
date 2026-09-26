@@ -22,7 +22,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { users, role, warehouses, createStaffAccount, deleteUserAccount } = useInventory();
+  const { user, users, role, warehouses, createStaffAccount, deleteUserAccount } = useInventory();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -39,11 +39,11 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email) return;
 
-    const result = createStaffAccount({
+    const result = await createStaffAccount({
       name,
       email,
       role: staffRole,
@@ -51,6 +51,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
       temporaryPassword: customPassword.trim() || undefined,
     });
 
+    if (!result) return;
     setCreatedCredentials(result);
     setName('');
     setEmail('');
@@ -267,7 +268,7 @@ export const StaffManagementModal: React.FC<StaffManagementModalProps> = ({
                     <tbody className="divide-y divide-stone-100">
                       {users.map((u) => {
                         const wh = warehouses.find((w) => w.id === u.warehouseId);
-                        const isRoot = u.id === 'usr-001';
+                        const isRoot = u.id === user.id;
                         return (
                           <tr key={u.id} className="hover:bg-stone-50">
                             <td className="py-2.5 px-3">

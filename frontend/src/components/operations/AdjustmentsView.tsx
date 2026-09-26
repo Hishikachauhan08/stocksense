@@ -52,11 +52,12 @@ export const AdjustmentsView: React.FC<AdjustmentsViewProps> = () => {
     }
   };
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
+  const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProd) return;
 
-    const newAdj = createAdjustment({
+    // Record the count and apply it right away
+    const ok = await createAdjustment({
       warehouseId,
       locationId,
       productId: selectedProd.id,
@@ -67,10 +68,9 @@ export const AdjustmentsView: React.FC<AdjustmentsViewProps> = () => {
       countedQty,
       reason,
       notes,
-    });
+    }, { validate: true });
 
-    validateAdjustment(newAdj.id);
-    setIsCreateModalOpen(false);
+    if (ok) setIsCreateModalOpen(false);
   };
 
   const getReasonBadge = (r: AdjustmentReason) => {

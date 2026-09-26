@@ -32,7 +32,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onOpenAuth,
   onOpenTour,
 }) => {
-  const { kpis, warehouses, role } = useInventory();
+  const { publicSummary } = useInventory();
 
   const handleEnter = () => {
     sound.playSuccess();
@@ -92,7 +92,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* Main Content */}
       <main className="flex-1 relative z-10">
-        {/* HERO SECTION - VALMAX 3D Dashboard Style in Bright Elegance */}
+        {/* HERO SECTION */}
         <section className="pt-12 pb-14 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto text-center space-y-7">
           {/* Eyebrow Tag */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-100 border border-stone-200/90 text-stone-700 text-xs font-medium">
@@ -154,10 +154,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <Box className="w-3.5 h-3.5 text-stone-700" />
               </div>
               <div className="text-2xl font-black font-mono text-stone-900 mt-1">
-                {kpis.totalUnitsInStock.toLocaleString()}
+                {publicSummary.totalUnitsInStock.toLocaleString()}
               </div>
               <div className="text-[10px] text-emerald-700 font-mono mt-0.5">
-                {kpis.totalProductsCount} SKUs monitored
+                {publicSummary.totalProductsCount} SKUs monitored
               </div>
             </div>
 
@@ -167,7 +167,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <Building2 className="w-3.5 h-3.5 text-stone-700" />
               </div>
               <div className="text-2xl font-black font-mono text-stone-900 mt-1">
-                {warehouses.length} Warehouses
+                {publicSummary.warehousesCount} Warehouses
               </div>
               <div className="text-[10px] text-stone-500 font-mono mt-0.5">
                 Main Store & Production
@@ -188,7 +188,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
           </div>
 
-          {/* 3D CONVEYOR SHOWCASE (VALMAX 27195047 Signature Component) */}
+          {/* 3D CONVEYOR SHOWCASE */}
           <div id="conveyor" className="pt-6">
             <Conveyor3DVisual height="480px" />
           </div>
@@ -316,7 +316,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
             <div className="relative rounded-3xl overflow-hidden border border-stone-200 shadow-md">
               <img
-                src="/src/assets/images/hero_warehouse_logistics_1790396703158.jpg"
+                src="/images/hero-warehouse.jpg"
                 alt="Automated High-Bay Warehouse Facility"
                 className="w-full h-80 object-cover object-center"
               />

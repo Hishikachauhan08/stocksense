@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useInventory } from '../../context/InventoryContext';
-import { Role } from '../../types/inventory';
 import {
   User,
   ShieldCheck,
@@ -12,7 +11,6 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
-import { sound } from '../../utils/audio';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -27,37 +25,43 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   onLogout,
   onOpenStaffManagement,
 }) => {
-  const { user, role, setRole, warehouses, soundEnabled, setSoundEnabled, updateUserCredentials } = useInventory();
+  const { user, role, warehouses, soundEnabled, setSoundEnabled, updateMyProfile } = useInventory();
 
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
   const [warehouseId, setWarehouseId] = useState(user.warehouseId);
-  const [currentPassword, setCurrentPassword] = useState(user.password || '');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Load the latest profile values each time the modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+    setName(user.name);
+    setEmail(user.email);
+    setWarehouseId(user.warehouseId);
+    setCurrentPassword('');
+    setNewPassword('');
+  }, [isOpen, user.name, user.email, user.warehouseId]);
 
   if (!isOpen) return null;
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateUserCredentials(user.id, {
+    setIsSaving(true);
+    const ok = await updateMyProfile({
       name,
       email,
-      warehouseId,
-      password: newPassword ? newPassword : user.password,
+      warehouseId: warehouseId || undefined,
+      ...(newPassword ? { currentPassword, newPassword } : {}),
     });
-    if (newPassword) {
-      setCurrentPassword(newPassword);
-      setNewPassword('');
-    }
+    setIsSaving(false);
+    if (!ok) return;
+    setCurrentPassword('');
+    setNewPassword('');
     setIsSaved(true);
-    sound.playSuccess();
     setTimeout(() => setIsSaved(false), 2500);
-  };
-
-  const handleRoleToggle = (newRole: Role) => {
-    setRole(newRole);
-    sound.playSuccess();
   };
 
   const isManager = role === 'inventory_manager';
@@ -97,31 +101,27 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               <h4 className="text-base font-bold text-stone-950 truncate">{user.name}</h4>
               <p className="text-xs text-stone-500 truncate">{user.email}</p>
               <div className="flex items-center gap-2 mt-2">
-                <button
-                  type="button"
-                  onClick={() => handleRoleToggle('inventory_manager')}
+                <span
                   className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
                     role === 'inventory_manager'
                       ? 'bg-stone-900 text-white shadow-xs'
-                      : 'bg-white text-stone-600 hover:text-stone-900 border border-stone-200'
+                      : 'bg-white text-stone-400 border border-stone-200'
                   }`}
                 >
                   <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
                   <span>Manager</span>
-                </button>
+                </span>
 
-                <button
-                  type="button"
-                  onClick={() => handleRoleToggle('warehouse_staff')}
+                <span
                   className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
                     role === 'warehouse_staff'
                       ? 'bg-stone-900 text-white shadow-xs'
-                      : 'bg-white text-stone-600 hover:text-stone-900 border border-stone-200'
+                      : 'bg-white text-stone-400 border border-stone-200'
                   }`}
                 >
                   <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
                   <span>Warehouse Staff</span>
-                </button>
+                </span>
               </div>
             </div>
           </div>
@@ -200,6 +200,27 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 Warehouse managers and staff can update their password and credentials at any time.
               </p>
 
+              {user.mustChangePassword && (
+                <p className="text-[11px] font-semibold text-amber-800">
+                  You are using a temporary password. Please set a new one.
+                </p>
+              )}
+
+              <div>
+                <label className="block text-[11px] font-medium text-stone-600 mb-1">
+                  Current Password
+                </label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required={Boolean(newPassword)}
+                  placeholder="Required to change your password"
+                  autoComplete="current-password"
+                  className="w-full px-3 py-2 bg-white border border-stone-200 rounded-xl text-xs text-stone-900 placeholder-stone-400 font-mono focus:outline-none focus:border-stone-400"
+                />
+              </div>
+
               <div>
                 <label className="block text-[11px] font-medium text-stone-600 mb-1">
                   Change to New Password
@@ -208,7 +229,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new secret password..."
+                  placeholder="At least 6 characters"
+                  minLength={6}
+                  autoComplete="new-password"
                   className="w-full px-3 py-2 bg-white border border-stone-200 rounded-xl text-xs text-stone-900 placeholder-stone-400 font-mono focus:outline-none focus:border-stone-400"
                 />
               </div>
@@ -260,9 +283,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-xs font-semibold text-white shadow-xs transition-all"
+                disabled={isSaving}
+                className="px-5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 disabled:opacity-60 text-xs font-semibold text-white shadow-xs transition-all"
               >
-                Save Changes
+                {isSaving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </form>

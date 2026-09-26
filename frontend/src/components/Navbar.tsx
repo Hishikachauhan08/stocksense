@@ -35,7 +35,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   const {
     user,
     role,
-    setRole,
     warehouses,
     activeFilters,
     setActiveFilters,
@@ -56,12 +55,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     const next = !soundEnabled;
     setSoundEnabled(next);
     if (next) sound.playBeep();
-  };
-
-  const toggleRole = () => {
-    const nextRole = role === 'inventory_manager' ? 'warehouse_staff' : 'inventory_manager';
-    setRole(nextRole);
-    sound.playSuccess();
   };
 
   return (
@@ -235,11 +228,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <div className="w-px h-6 bg-stone-200 mx-1" />
 
-        {/* User Role Switcher Pill & Avatar */}
+        {/* User Role Pill & Avatar */}
         <div className="flex items-center gap-2">
           <button
-            onClick={toggleRole}
-            title="Click to toggle between Manager & Staff role"
+            onClick={onOpenProfile}
+            title={role === 'inventory_manager' ? 'Signed in as Inventory Manager' : 'Signed in as Warehouse Staff'}
             className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-all border shadow-2xs"
             style={{
               backgroundColor: role === 'inventory_manager' ? '#fef3c7' : '#f4f4f5',

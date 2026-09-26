@@ -26,6 +26,7 @@ interface SidebarProps {
   onOpenTour: () => void;
   onOpenStaffManagement: () => void;
   onGoToLanding: () => void;
+  onLogout: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -36,6 +37,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenTour,
   onOpenStaffManagement,
   onGoToLanding,
+  onLogout,
 }) => {
   const { user, role, lowStockAlerts, receipts, deliveries, transfers } = useInventory();
 
@@ -306,11 +308,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>My Profile</span>
             </button>
             <button
-              onClick={onOpenAuth}
-              className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 hover:text-stone-900 text-[11px] font-medium transition-colors"
+              onClick={onLogout}
+              className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg bg-stone-100 hover:bg-rose-50 text-stone-700 hover:text-rose-700 text-[11px] font-medium transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>Switch User</span>
+              <span>Logout</span>
             </button>
           </div>
         </div>

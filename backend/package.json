@@ -11,6 +11,7 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "setup": "prisma db push && tsx prisma/seed.ts",
+    "test:api": "node scripts/smoke-test.mjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {

@@ -1,26 +1,18 @@
 # StockSense – Modular Inventory Management System
 
-A complete Inventory Management System with **FastAPI backend** + **Next.js frontend**.
+Premium IMS with **FastAPI backend** + **React/Vite fluid frontend** (3D warehouse, guided tour, barcode scanner, omni-search).
 
 ## Tech Stack
 
 | Layer | Tech |
 |-------|------|
-| **Frontend** | Next.js 14 (App Router), TypeScript, Tailwind CSS, Framer Motion, Lucide Icons |
-| **Backend** | FastAPI, SQLAlchemy, SQLite, JWT Auth |
-| **Features** | Full inventory ops, multi-warehouse, low-stock alerts, stock ledger |
+| **Frontend** | React 19, Vite 8, Tailwind CSS v4, Three.js, Motion, Lucide |
+| **Backend** | FastAPI, SQLAlchemy, SQLite, JWT + bcrypt |
+| **UI** | Landing page, 3D digital twin, dashboard KPIs, full operations |
 
 ## Quick Start
 
-### 1. Backend (port 8000)
-
-```bash
-cd StockSense
-pip install fastapi uvicorn sqlalchemy pydantic python-multipart bcrypt python-jose[cryptography]
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-### 2. Frontend (port 3000)
+### Frontend (recommended – fully interactive demo)
 
 ```bash
 cd StockSense/frontend
@@ -30,41 +22,39 @@ npm run dev
 
 Open **http://localhost:3000**
 
-### Demo Credentials
-- **Admin**: `admin@stocksense.com` / `admin123`
-- **Staff**: `staff@stocksense.com` / `staff123`
+Demo login: `m.vance@stocksense.io` / `manager123`
 
-## Project Structure
+### Backend (optional – REST API)
+
+```bash
+cd StockSense
+pip install fastapi uvicorn sqlalchemy pydantic python-multipart bcrypt python-jose[cryptography]
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+API demo login: `admin@stocksense.com` / `admin123`
+
+## Frontend highlights
+
+- Landing page with 3D conveyor visual
+- Dashboard + live 3D warehouse digital twin
+- Products, Receipts, Deliveries, Internal Transfers, Adjustments
+- Move History / Stock Ledger
+- Omni-search (⌘K), barcode scanner modal, guided tour
+- Auth (login / signup / OTP reset), profile & staff management
+- Client-side InventoryContext with localStorage seed (works offline)
+
+## Project structure
 
 ```
 StockSense/
-├── app/                    # FastAPI backend
-│   ├── main.py             # Routes + seed data
-│   ├── database.py         # SQLAlchemy models (cross-platform SQLite)
-│   ├── auth.py             # JWT + bcrypt
-│   └── schemas.py
-├── frontend/               # Next.js 14 frontend
+├── app/                 # FastAPI backend
+├── frontend/            # React + Vite fluid UI (primary)
 │   ├── src/
-│   │   ├── app/            # Pages (dashboard, products, receipts, ...)
-│   │   ├── components/     # Sidebar, Modal, KpiCard, AppShell
-│   │   └── lib/            # API client, auth context, toast
-│   ├── package.json
-│   └── ...
-├── static/                 # Legacy vanilla frontend (optional)
+│   │   ├── components/  # Dashboard, ops, 3D, auth, ...
+│   │   ├── context/     # InventoryContext (seed + state)
+│   │   └── types/
+│   └── package.json
+├── static/              # Legacy vanilla SPA (optional)
 └── README.md
 ```
-
-## Features
-
-- Authentication (login / signup / OTP password reset)
-- Dashboard with KPIs + stock alerts
-- Products (CRUD, search, category filter, reorder levels)
-- Receipts → Validate → stock increases
-- Delivery Orders → Validate → stock decreases
-- Internal Transfers between warehouses
-- Stock Adjustments (physical count)
-- Full Move History / Stock Ledger
-- Multi-warehouse support
-- Dark theme + Framer Motion animations
-
-The SQLite file (`stocksense.db`) is created automatically in the project root.

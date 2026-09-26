@@ -1,10 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverActions: {
-      bodySizeLimit: '2mb',
-    },
-  },
+  // API-only service: the UI lives in ../frontend
+  poweredByHeader: false,
 };
 
 export default nextConfig;

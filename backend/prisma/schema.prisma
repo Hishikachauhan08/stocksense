@@ -1,3 +1,7 @@
+// StockSense data model.
+// Kept provider-portable (no enums / native types) so switching from SQLite
+// to PostgreSQL (e.g. Supabase) only requires changing `provider` + DATABASE_URL.
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,214 +12,147 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String
-  email         String    @unique
-  password      String
-  role          String    @default("user")
-  otpCode       String?
-  otpExpiry     DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  stockMoves    StockMove[]
-  receipts      Receipt[]
-  deliveries    Delivery[]
-  transfers     Transfer[]
-  adjustments   Adjustment[]
-}
-
-model Category {
-  id          String    @id @default(cuid())
-  name        String    @unique
-  description String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  products    Product[]
-}
-
-model Product {
-  id              String    @id @default(cuid())
-  name            String
-  sku             String    @unique
-  categoryId      String
-  category        Category  @relation(fields: [categoryId], references: [id])
-  unitOfMeasure   String    @default("pcs")
-  description     String?
-  reorderLevel    Int       @default(0)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  stockBalances   StockBalance[]
-  receiptItems    ReceiptItem[]
-  deliveryItems   DeliveryItem[]
-  transferItems   TransferItem[]
-  adjustmentItems AdjustmentItem[]
-  stockMoves      StockMove[]
-  reorderRule     ReorderRule?
+  id                 String    @id @default(cuid())
+  name               String
+  email              String    @unique
+  passwordHash       String
+  role               String    @default("warehouse_staff") // inventory_manager | warehouse_staff
+  avatar             String    @default("")
+  warehouseId        String?
+  createdBy          String?
+  mustChangePassword Boolean   @default(false)
+  otpHash            String?
+  otpExpiresAt       DateTime?
+  otpAttempts        Int       @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 }
 
 model Warehouse {
   id        String     @id @default(cuid())
-  name      String     @unique
-  address   String?
+  name      String
+  code      String     @unique
+  address   String     @default("")
+  manager   String     @default("")
   createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
   locations Location[]
 }
 
 model Location {
-  id             String         @id @default(cuid())
-  name           String
-  warehouseId    String
-  warehouse      Warehouse      @relation(fields: [warehouseId], references: [id])
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  stockBalances  StockBalance[]
-  receiptsTo     Receipt[]      @relation("ReceiptDestination")
-  deliveriesFrom Delivery[]     @relation("DeliverySource")
-  transfersFrom  Transfer[]     @relation("TransferSource")
-  transfersTo    Transfer[]     @relation("TransferDestination")
-  adjustments    Adjustment[]
-  movesFrom      StockMove[]    @relation("MoveSource")
-  movesTo        StockMove[]    @relation("MoveDestination")
+  id          String       @id @default(cuid())
+  name        String
+  code        String
+  type        String       @default("rack") // shelf | rack | floor | transit | dock
+  capacity    Int          @default(500)
+  warehouseId String
+  warehouse   Warehouse    @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+  stocks      StockQuant[]
 
-  @@unique([name, warehouseId])
+  @@unique([warehouseId, code])
 }
 
-model StockBalance {
+model Product {
+  id            String   @id @default(cuid())
+  name          String
+  sku           String   @unique
+  category      String
+  unitOfMeasure String   @default("units")
+  price         Float    @default(0)
+  cost          Float    @default(0)
+  description   String   @default("")
+  image         String?
+  // Reordering rule
+  minQuantity        Float   @default(0)
+  maxQuantity        Float   @default(0)
+  reorderQuantity    Float   @default(0)
+  autoReorderEnabled Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stocks      StockQuant[]
+  lines       OperationLine[]
+  adjustments Adjustment[]
+}
+
+// On-hand quantity of a product at one location
+model StockQuant {
   id         String   @id @default(cuid())
   productId  String
-  product    Product  @relation(fields: [productId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   locationId String
-  location   Location @relation(fields: [locationId], references: [id])
-  quantity   Int      @default(0)
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  quantity   Float    @default(0)
   updatedAt  DateTime @updatedAt
 
   @@unique([productId, locationId])
 }
 
-model ReorderRule {
-  id           String   @id @default(cuid())
-  productId    String   @unique
-  product      Product  @relation(fields: [productId], references: [id])
-  reorderLevel Int      @default(10)
-  reorderQty   Int      @default(50)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+// Receipts, delivery orders and internal transfers share one document model
+model Operation {
+  id               String    @id @default(cuid())
+  type             String // receipt | delivery | internal
+  reference        String    @unique
+  status           String    @default("draft") // draft | waiting | ready | done | canceled
+  partner          String    @default("") // supplier (receipt) or customer (delivery)
+  sourceLocationId String?
+  destLocationId   String?
+  scheduledDate    String
+  isPicked         Boolean   @default(false)
+  isPacked         Boolean   @default(false)
+  shippingAddress  String?
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  validatedAt      DateTime?
+  validatedBy      String?
+  lines            OperationLine[]
+
+  @@index([type, status])
 }
 
-model Receipt {
-  id            String        @id @default(cuid())
-  reference     String        @unique
-  status        String        @default("draft")
-  destinationId String
-  destination   Location      @relation("ReceiptDestination", fields: [destinationId], references: [id])
-  notes         String?
-  userId        String
-  user          User          @relation(fields: [userId], references: [id])
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  validatedAt   DateTime?
-  items         ReceiptItem[]
-}
-
-model ReceiptItem {
-  id        String  @id @default(cuid())
-  receiptId String
-  receipt   Receipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-  quantity  Int
-}
-
-model Delivery {
-  id          String         @id @default(cuid())
-  reference   String         @unique
-  status      String         @default("draft")
-  sourceId    String
-  source      Location       @relation("DeliverySource", fields: [sourceId], references: [id])
-  notes       String?
-  userId      String
-  user        User           @relation(fields: [userId], references: [id])
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  validatedAt DateTime?
-  items       DeliveryItem[]
-}
-
-model DeliveryItem {
-  id         String   @id @default(cuid())
-  deliveryId String
-  delivery   Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
-  productId  String
-  product    Product  @relation(fields: [productId], references: [id])
-  quantity   Int
-}
-
-model Transfer {
-  id            String         @id @default(cuid())
-  reference     String         @unique
-  status        String         @default("draft")
-  sourceId      String
-  source        Location       @relation("TransferSource", fields: [sourceId], references: [id])
-  destinationId String
-  destination   Location       @relation("TransferDestination", fields: [destinationId], references: [id])
-  notes         String?
-  userId        String
-  user          User           @relation(fields: [userId], references: [id])
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  validatedAt   DateTime?
-  items         TransferItem[]
-}
-
-model TransferItem {
-  id         String   @id @default(cuid())
-  transferId String
-  transfer   Transfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
-  productId  String
-  product    Product  @relation(fields: [productId], references: [id])
-  quantity   Int
+model OperationLine {
+  id          String    @id @default(cuid())
+  operationId String
+  operation   Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  demandQty   Float
+  doneQty     Float     @default(0)
 }
 
 model Adjustment {
-  id          String           @id @default(cuid())
-  reference   String           @unique
-  status      String           @default("draft")
+  id          String    @id @default(cuid())
+  reference   String    @unique
   locationId  String
-  location    Location         @relation(fields: [locationId], references: [id])
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  recordedQty Float
+  countedQty  Float
+  reason      String    @default("physical_count")
   notes       String?
-  userId      String
-  user        User             @relation(fields: [userId], references: [id])
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  status      String    @default("draft")
+  createdAt   DateTime  @default(now())
   validatedAt DateTime?
-  items       AdjustmentItem[]
+  validatedBy String?
 }
 
-model AdjustmentItem {
-  id           String     @id @default(cuid())
-  adjustmentId String
-  adjustment   Adjustment @relation(fields: [adjustmentId], references: [id], onDelete: Cascade)
-  productId    String
-  product      Product    @relation(fields: [productId], references: [id])
-  systemQty    Int
-  physicalQty  Int
-  difference   Int
-}
-
+// Immutable stock ledger. Names are snapshotted so history survives renames/deletes.
 model StockMove {
-  id            String    @id @default(cuid())
-  date          DateTime  @default(now())
+  id            String   @id @default(cuid())
+  timestamp     DateTime @default(now())
   reference     String
+  operationType String // receipt | delivery | internal | adjustment
   productId     String
-  product       Product   @relation(fields: [productId], references: [id])
-  movementType  String
-  sourceId      String?
-  source        Location? @relation("MoveSource", fields: [sourceId], references: [id])
-  destinationId String?
-  destination   Location? @relation("MoveDestination", fields: [destinationId], references: [id])
-  quantity      Int
-  userId        String
-  user          User      @relation(fields: [userId], references: [id])
-  createdAt     DateTime  @default(now())
+  productName   String
+  sku           String
+  fromLocation  String
+  toLocation    String
+  quantity      Float
+  unitOfMeasure String
+  performedBy   String
+  notes         String?
+
+  @@index([productId])
+  @@index([timestamp])
 }

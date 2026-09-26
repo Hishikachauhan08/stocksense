@@ -1,9 +1,11 @@
+import fs from 'fs';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 
 export default defineConfig({
+  root: fs.realpathSync.native(path.resolve('.')),
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

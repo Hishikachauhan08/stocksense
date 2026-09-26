@@ -2,6 +2,7 @@
   "name": "stocksense",
   "version": "1.0.0",
   "private": true,
+  "license": "MIT",
   "description": "StockSense - Modular Inventory Management System (frontend + backend)",
   "scripts": {
     "setup": "npm install && npm install --prefix backend && npm install --prefix frontend && node scripts/init-env.mjs && npm run setup --prefix backend",

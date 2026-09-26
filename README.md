@@ -181,3 +181,9 @@ All endpoints except auth, `/api/health` and `/api/public/summary` require the h
 | POST | `/api/adjustments`, `/api/adjustments/:id/validate` | Physical count adjustments |
 | POST | `/api/warehouses`, `/api/warehouses/:id/locations` | Warehouses and locations (manager) |
 | POST, DELETE | `/api/users`, `/api/users/:id` | Staff accounts (manager) |
+
+---
+
+## License
+
+Released under the [MIT License](LICENSE).
